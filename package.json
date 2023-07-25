@@ -13,7 +13,7 @@
     "@wdio/selenium-standalone-service": "^8.8.0",
     "@wdio/spec-reporter": "^8.4.0",
     "allure-commandline": "^2.21.0",
-    "chromedriver": "^112.0.0",
+    "chromedriver": "^114.0.0",
     "deepmerge": "^4.3.1",
     "fs": "^0.0.1-security",
     "geckodriver": "^3.2.0",
@@ -27,9 +27,11 @@
   },
   "scripts": {
     "wdio": "wdio run wdio.conf.js",
+    "wdio-allure-homework": "wdio run wdio.allure.for.homework.conf.js",
     "wdio-hooks": "wdio run test/specs/examples/lesson-06/wdio.hooks.conf.js",
     "wdio-allure": "wdio run test/specs/examples/lesson-06/wdio.allure.conf.js",
     "wdio-htmlreporter": "wdio run test/specs/examples/lesson-06/wdio.htmlreporter.conf.js",
     "wdio-cucumber": "wdio run test/specs/examples/lesson-12/wdio.cucumber.conf.js"
+    
   }
 }

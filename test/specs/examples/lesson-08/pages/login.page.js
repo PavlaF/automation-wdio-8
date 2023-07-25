@@ -18,6 +18,7 @@ class LoginPage {
         await browser.url(this.url);
     }
 
+ 
     async login(username, password) {
         await this.emailField.setValue(username);
         await this.passwordField.setValue(password);

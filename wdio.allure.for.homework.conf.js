@@ -1,19 +1,9 @@
 import fs from 'fs';
+import allure from 'allure-commandline';
+import video from 'wdio-video-reporter';
 
-const passedDirectory = 'screenshots/passed';
-const failedDirectory = 'screenshots/failed';
-
-function createIfNotExists(dir) {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-}
-
-function deleteFiles(dir) {
-    fs.rm(dir, { recursive: true }, err => {
-        if (err) console.log(err);
-    });
-}
+const allureTmpDirectory = './.tmp/allure';
+const allureReportDirectory = './reports/allure';
 
 export const config = {
     runner: 'local',
@@ -24,10 +14,8 @@ export const config = {
         // './test/specs/examples/**/*.js'
     ],
     suites: {
-        exercise: ['./test/specs/*.e2e.js'],
-        login: ['./test/specs/login.e2e.js'],
-        application: ['./test/specs/order.e2e.js'],
-        order: ['./test/specs/applications.e2e.js'],
+        org: ['./test/specs/org.e2e.js'],
+        exercise: ['./test/specs/exercise.e2e.js'],
         homework: ['./test/specs/homework/*.e2e.js'],
         lesson_01: ['./test/specs/examples/lesson-01/**/*.e2e.js'],
         lesson_02: ['./test/specs/examples/lesson-02/**/*.e2e.js'],
@@ -47,8 +35,8 @@ export const config = {
         acceptInsecureCerts: true,
         'goog:chromeOptions': {
             args: [
-                // '--window-size=1920,1080',
-                // '--headless',
+                '--window-size=1920,1080',
+                '--headless',
                 '--no-sandbox',
                 '--disable-gpu',
                 '--disable-setuid-sandbox',
@@ -63,7 +51,7 @@ export const config = {
             ]
         }
     }],
-    logLevel: 'error',
+    logLevel: 'silent',
     bail: 0,
     baseUrl: 'https://team8-2022brno.herokuapp.com',
     waitforTimeout: 10000,
@@ -74,25 +62,49 @@ export const config = {
         'geckodriver'
     ],
     framework: 'mocha',
-    reporters: ['spec'],
     mochaOpts: {
         ui: 'bdd',
         timeout: 60000
     },
-    // onPrepare: (config, capabilities) => {
-    //     deleteFiles("screenshots");
-    // },
 
-    // afterTest: (test, context, { error, result, duration, passed, retries }) => {
-    //     const screenshotName = (`${test.parent}__${test.title}.png`).replace(/ /g, '_');
-    //     console.log(test)
-    //     if (passed === true) {
-    //         createIfNotExists(passedDirectory);
-    //         browser.saveScreenshot( `${passedDirectory}/${screenshotName}`);
-    //     } else {
-    //         createIfNotExists(failedDirectory);
-    //         browser.saveScreenshot(`${failedDirectory}/${screenshotName}`);
-    //     }
-    // }
+        /*
+    Konfigurace reportování
+     */
+    reporters: [
+        'spec',
+        [video, {
+            outputDir: allureTmpDirectory,
+            saveAllVideos: true,        // If true, also saves videos for successful test cases
+            videoSlowdownMultiplier: 3, // Higher to get slower videos, lower for faster videos [Value 1-100]
+        }],
+        ['allure', {
+            outputDir: allureTmpDirectory,
+            disableWebdriverStepsReporting: true,
+            disableWebdriverScreenshotsReporting: true,
+            addConsoleLogs: true,
+        }]
+    ],
 
+    /*
+    Definice potřebných hooků
+    */
+    onPrepare: (config, capabilities) => {
+        // remove previous tmp files
+        fs.rmdir(allureTmpDirectory, { recursive: true }, err => {
+            if (err) console.log(err);
+        });
+    },
+    onComplete: () => {
+        const reportError = new Error('Could not generate Allure report')
+        const generation = allure(['generate', '--clean', allureTmpDirectory, '--output', allureReportDirectory]);
+        return new Promise((resolve, reject) => {
+            const generationTimeout = setTimeout(() => reject(reportError), 5000);
+            generation.on('exit', function(exitCode) {
+                clearTimeout(generationTimeout);
+                if (exitCode !== 0) return reject(reportError);
+                console.log('Allure report successfully generated');
+                resolve()
+            });
+        });
+    }
 }
